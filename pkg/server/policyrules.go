@@ -55,6 +55,7 @@ type iptableBuffer struct {
 	egressTo      *bytes.Buffer
 	filterChains  *bytes.Buffer
 	filterRules   *bytes.Buffer
+	iptableBuffer *bytes.Buffer
 }
 
 func newIptableBuffer() *iptableBuffer {
@@ -67,6 +68,7 @@ func newIptableBuffer() *iptableBuffer {
 		egressTo:      bytes.NewBuffer(nil),
 		filterChains:  bytes.NewBuffer(nil),
 		filterRules:   bytes.NewBuffer(nil),
+		iptableBuffer: bytes.NewBuffer(nil),
 		currentChain:  map[utiliptables.Chain]bool{},
 		activeChain:   map[utiliptables.Chain]bool{},
 	}
@@ -74,7 +76,7 @@ func newIptableBuffer() *iptableBuffer {
 }
 
 func (ipt *iptableBuffer) Init(iptables utiliptables.Interface) {
-	tmpbuf := bytes.NewBuffer(nil)
+	tmpbuf := ipt.iptableBuffer
 	tmpbuf.Reset()
 	err := iptables.SaveInto(utiliptables.TableFilter, tmpbuf)
 	if err != nil {
@@ -263,7 +265,7 @@ func (ipt *iptableBuffer) renderIngressFrom(s *Server, podInfo *controllers.PodI
 			for _, sPod := range pods {
 				nsLabels, err := s.namespaceMap.GetNamespaceInfo(sPod.Namespace)
 				if err != nil {
-					klog.Errorf("cannot get namespace info: %v %v", sPod.ObjectMeta.Name, err)
+					klog.Errorf("cannot get namespace info: %v %v", sPod.Name, err)
 					continue
 				}
 				if nsSelector != nil && !nsSelector.Matches(labels.Set(nsLabels.Labels)) {

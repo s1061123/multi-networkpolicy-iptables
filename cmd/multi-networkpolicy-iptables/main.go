@@ -20,6 +20,8 @@ import (
 	//"flag"
 	"log"
 	"os"
+	"net/http"
+	_ "net/http/pprof"
 	"time"
 
 	"github.com/k8snetworkplumbingwg/multi-networkpolicy-iptables/pkg/server"
@@ -50,6 +52,7 @@ func initLogs() {
 }
 
 func main() {
+	go func() {log.Println(http.ListenAndServe("0.0.0.0:6060", nil)) }()
 	initLogs()
 	defer klog.Flush()
 	opts := server.NewOptions()

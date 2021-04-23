@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -81,6 +82,7 @@ type Server struct {
 	NodeRef             *v1.ObjectReference
 	ip4Tables           utiliptables.Interface
 	ip6Tables           utiliptables.Interface
+	iptableBuffer		*iptableBuffer
 
 	initialized int32
 
@@ -264,6 +266,7 @@ func NewServer(o *Options) (*Server, error) {
 		NodeRef:             nodeRef,
 		ip4Tables:           utiliptables.New(exec.New(), utiliptables.ProtocolIpv4),
 		ip6Tables:           utiliptables.New(exec.New(), utiliptables.ProtocolIpv6),
+		iptableBuffer:       newIptableBuffer(),
 
 		policyChanges: policyChanges,
 		podChanges:    podChanges,
@@ -429,7 +432,15 @@ func (s *Server) OnNamespaceSynced() {
 	}
 }
 
+var mem runtime.MemStats
+
+func PrintMemory() {
+	runtime.ReadMemStats(&mem)
+	 klog.Infof("memAlloc:%v memTotalAlloc:%v memHeapAlloc:%v memHeapSys:%v", mem.Alloc, mem.TotalAlloc, mem.HeapAlloc, mem.HeapSys)
+}
+
 func (s *Server) syncMultiPolicy() {
+	PrintMemory()
 	klog.V(4).Infof("syncMultiPolicy")
 	s.podMap.Update(s.podChanges)
 	s.policyMap.Update(s.policyChanges)
